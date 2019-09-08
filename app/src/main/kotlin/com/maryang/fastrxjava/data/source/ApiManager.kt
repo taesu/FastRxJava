@@ -11,7 +11,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object ApiManager {
 
-    private val gson =
+    val gson =
         GsonBuilder()
             .setLenient()
             .create()
