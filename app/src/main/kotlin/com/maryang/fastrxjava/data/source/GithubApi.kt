@@ -23,19 +23,4 @@ interface GithubApi {
         @Path("owner") owner: String,
         @Path("repo") repo: String
     ): Completable
-
-    @GET("users/{userName}/repos")
-    fun getRepos(
-        @Path("userName") userName: String = "googlesamples"
-    ): Single<List<GithubRepo>>
-
-    @GET("users/{userName}")
-    fun getUser(
-        @Path("userName") userName: String = "octocat"
-    ): Maybe<User>
-
-    @PUT("users/{userName}")
-    fun changeName(
-        @Path("userName") userName: String = "octocat"
-    ): Completable
 }

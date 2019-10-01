@@ -23,12 +23,12 @@ class GithubRepository {
     fun checkStar(owner: String, repo: String): Completable =
         api.checkStar(owner, repo)
 
-    fun getGithubRepos(): Single<List<GithubRepo>> =
-        api.getRepos()
-
-    fun getUser(): Maybe<User> =
-        api.getUser()
-
-    fun changeName(name: String): Completable =
-        api.changeName()
+//    fun getGithubRepos(): Single<List<GithubRepo>> =
+//        api.getRepos()
+//
+//    fun getUser(): Maybe<User> =
+//        api.getUser()
+//
+//    fun changeName(name: String): Completable =
+//        api.changeName()
 }

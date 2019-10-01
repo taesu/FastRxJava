@@ -10,7 +10,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.maryang.fastrxjava.R
 import com.maryang.fastrxjava.base.BaseApplication
 import com.maryang.fastrxjava.entity.GithubRepo
+import com.maryang.fastrxjava.ui.repos.GithubReposAdapter
+import com.maryang.fastrxjava.util.DataObserver
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.observers.DisposableObserver
 import io.reactivex.observers.DisposableSingleObserver
 import io.reactivex.subjects.PublishSubject
 import kotlinx.android.synthetic.main.activity_github_repos.*
@@ -26,8 +29,21 @@ class GithubReposActivity : AppCompatActivity() {
         GithubReposAdapter()
     }
 
-    var subject = PublishSubject.create<String>()
+    private val eventDisposable = DataObserver.observe()
+        .filter { it is GithubRepo }
+        .subscribe { repo ->
+            adapter.items.find {
+                it.id == repo.id
+            }?.apply {
+                star = star.not()
+            }
+            adapter.notifyDataSetChanged()
+        }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        eventDisposable.dispose()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,23 +52,12 @@ class GithubReposActivity : AppCompatActivity() {
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = this.adapter
 
-//        refreshLayout.setOnRefreshListener { load() }
-//
-//        load(true)
-
-        Log.d(BaseApplication.TAG, "current Thread: ${Thread.currentThread().name}")
-
-        subject
-            .debounce(1, TimeUnit.SECONDS)
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe {
-                searchLoad(it, true)
-            }
+        refreshLayout.setOnRefreshListener { viewModel.searchGithubRepos() }
 
         searchText.addTextChangedListener(object : TextWatcher {
 
             override fun afterTextChanged(text: Editable?) {
-                subject.onNext(text.toString())
+                viewModel.searchGithubRepos(text.toString())
             }
 
             override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
@@ -60,36 +65,28 @@ class GithubReposActivity : AppCompatActivity() {
 
             override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
             }
-
         })
+        subscribeSearch()
     }
 
-    private fun searchLoad(search: String, showLoading: Boolean) {
-        if (showLoading)
-            showLoading()
-
-        viewModel.searchGithubRepos(search)
-            .subscribe(object : DisposableSingleObserver<List<GithubRepo>>() {
-                override fun onSuccess(t: List<GithubRepo>) {
+    private fun subscribeSearch() {
+        viewModel.searchGithubReposSubject()
+            .doOnNext {
+                if (it) showLoading()
+            }
+            .flatMap { viewModel.searchGithubReposObservable() }
+            .subscribe(object : DisposableObserver<List<GithubRepo>>() {
+                override fun onNext(t: List<GithubRepo>) {
                     hideLoading()
                     adapter.items = t
+                }
+
+                override fun onComplete() {
                 }
 
                 override fun onError(e: Throwable) {
                     hideLoading()
                 }
-            })
-    }
-
-    private fun load(showLoading: Boolean = false) {
-        if (showLoading)
-            showLoading()
-        viewModel.getGithubRepos()
-            .subscribe({
-                hideLoading()
-                adapter.items = it
-            }, {
-                hideLoading()
             })
     }
 

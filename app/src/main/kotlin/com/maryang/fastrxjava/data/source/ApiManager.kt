@@ -29,7 +29,10 @@ object ApiManager {
             .client(okHttpClientBuilder
                 .addInterceptor { chain ->
                     val requestBuilder = chain.request().newBuilder()
-                        .header("Accept", "application/vnd.github.v3+json")
+                        .header(
+                            "Authorization",
+                            "token 5d0a87bc00469d8004d14b9b4ffb9dc621844865"
+                        )
                     chain.proceed(requestBuilder.build())
                 }
                 .build())
